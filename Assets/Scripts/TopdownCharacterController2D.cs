@@ -541,13 +541,13 @@ public class TopdownCharacterController2D : MonoBehaviour
 					_raycastHitsThisFrame.Add( _raycastHit );
 					// if we weren't grounded last frame, that means we're landing on a slope horizontally.
 					// this ensures that we stay flush to that slope
-					if ( !collisionState.wasGroundedLastFrame )
-					{
-						float flushDistance = Mathf.Sign( deltaMovement.y ) * ( _raycastHit.distance - skinWidth );
-						//transform.Translate( new Vector2( flushDistance, 0 ) );
-						transform.Translate( new Vector2( 0, flushDistance ) );
-					}
-					break;
+					//if ( !collisionState.wasGroundedLastFrame )
+					//{
+					//	float flushDistance = Mathf.Sign( deltaMovement.y ) * ( _raycastHit.distance - skinWidth );
+					//	//transform.Translate( new Vector2( flushDistance, 0 ) );
+					//	transform.Translate( new Vector2( 0, flushDistance ) );
+					//}
+					//break;
 				}
 
                 // set our new deltaMovement and recalculate the rayDistance taking it into account
@@ -603,6 +603,9 @@ public class TopdownCharacterController2D : MonoBehaviour
 				// we dont set collisions on the sides for this since a slope is not technically a side collision.
 				// smooth y movement when we climb. we make the y movement equivalent to the actual y location that corresponds
 				// to our new x location using our good friend Pythagoras
+                //FIXME: this seems to be the culprit. 
+                // inverting fixes current problems and makes more issues
+                // we need to invert in certain cases and not in others
 				deltaMovement.x = Mathf.Abs( Mathf.Tan( angle * Mathf.Deg2Rad ) * deltaMovement.y );
 				var isGoingUp = deltaMovement.y > 0;
 
@@ -625,7 +628,23 @@ public class TopdownCharacterController2D : MonoBehaviour
                         //else
                         //    deltaMovement.y += _skinWidth;
                     }
+                }else{
+                    var ray = _raycastOrigins.bottomLeft;
+					raycastHit = Physics2D.Raycast( _raycastOrigins.bottomLeft, deltaMovement.normalized, deltaMovement.magnitude, platformMask );
+                    if(!raycastHit){
+                        ray = _raycastOrigins.bottomRight;
+                        raycastHit = Physics2D.Raycast( _raycastOrigins.bottomRight, deltaMovement.normalized, deltaMovement.magnitude, platformMask );
+                    }
 
+                    if(raycastHit){
+                        deltaMovement = (Vector3)raycastHit.point - ray;
+                        deltaMovement.y -= _skinWidth;
+                        //if( isGoingUp )
+                        //    deltaMovement.y -= _skinWidth;
+                        //else
+                        //    deltaMovement.y += _skinWidth;
+                    }
+                    
                 }
 				//var ray = isGoingUp ? _raycastOrigins.topLeft : _raycastOrigins.bottomLeft;
 				//if( collisionState.wasGroundedLastFrame )
