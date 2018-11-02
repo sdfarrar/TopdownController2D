@@ -175,6 +175,7 @@ public class TopdownCharacterController2D : MonoBehaviour
 	// the reason is so that if we reach the end of the slope we can make an adjustment to stay grounded
 	bool _isGoingUpSlope = false;
 
+    bool _horizontalSlope = false;
 
 	#region Monobehaviour
 
@@ -247,14 +248,16 @@ public class TopdownCharacterController2D : MonoBehaviour
 		collisionState.reset();
 		_raycastHitsThisFrame.Clear();
 		_isGoingUpSlope = false;
+        _horizontalSlope = false;
 
 		primeRaycastOrigins();
 
 
 		// first, we check for a slope below us before moving
 		// only check slopes if we are going down and grounded
-		//if( deltaMovement.y < 0f && collisionState.wasGroundedLastFrame )
-		//	handleVerticalSlope( ref deltaMovement );
+//		if( deltaMovement.y < 0f && collisionState.wasGroundedLastFrame )
+//			handleVerticalSlope( ref deltaMovement );
+//
 
 		// now we check movement in the horizontal dir
 		if( deltaMovement.x != 0f )
@@ -372,33 +375,37 @@ public class TopdownCharacterController2D : MonoBehaviour
 
 			if( _raycastHit )
 			{
+                // TODO: pass origin ray here instead of in handleSlope function
 				// handle slopes from the bottom
-				//if( i == 0 && handleHorizontalSlope( ref deltaMovement, Vector2.Angle( _raycastHit.normal, Vector2.up ) ) )
-				//{
-				//	_raycastHitsThisFrame.Add( _raycastHit );
-				//	// if we weren't grounded last frame, that means we're landing on a slope horizontally.
-				//	// this ensures that we stay flush to that slope
-				//	if ( !collisionState.wasGroundedLastFrame )
-				//	{
-				//		float flushDistance = Mathf.Sign( deltaMovement.x ) * ( _raycastHit.distance - skinWidth );
-				//		transform.Translate( new Vector2( flushDistance, 0 ) );
-				//	}
-				//	break;
-				//}
+				if( i == 0 && handleHorizontalSlope( ref deltaMovement, Vector2.Angle( _raycastHit.normal, Vector2.up ) ) )
+				{
+                    _horizontalSlope = true;
+					_raycastHitsThisFrame.Add( _raycastHit );
+					// if we weren't grounded last frame, that means we're landing on a slope horizontally.
+					// this ensures that we stay flush to that slope
+					if ( !collisionState.wasGroundedLastFrame )
+					{
+						float flushDistance = Mathf.Sign( deltaMovement.x ) * ( _raycastHit.distance - skinWidth );
+						transform.Translate( new Vector2( flushDistance, 0 ) );
+					}
+					break;
+				}
 
-				//// handle slopes from the top
-				//if( i == (totalHorizontalRays-1) && handleHorizontalSlope( ref deltaMovement, Vector2.Angle( _raycastHit.normal, Vector2.down ) ) )
-				//{
-				//	_raycastHitsThisFrame.Add( _raycastHit );
-				//	// if we weren't grounded last frame, that means we're landing on a slope horizontally.
-				//	// this ensures that we stay flush to that slope
-				//	if ( !collisionState.wasGroundedLastFrame )
-				//	{
-				//		float flushDistance = Mathf.Sign( deltaMovement.x ) * ( _raycastHit.distance - skinWidth );
-				//		transform.Translate( new Vector2( flushDistance, 0 ) );
-				//	}
-				//	break;
-				//}
+                // TODO: pass origin ray here instead of in handleSlope function
+				// handle slopes from the top
+				if( i == (totalHorizontalRays-1) && handleHorizontalSlope( ref deltaMovement, Vector2.Angle( _raycastHit.normal, Vector2.down ) ) )
+				{
+                    _horizontalSlope = true;
+					_raycastHitsThisFrame.Add( _raycastHit );
+					// if we weren't grounded last frame, that means we're landing on a slope horizontally.
+					// this ensures that we stay flush to that slope
+					if ( !collisionState.wasGroundedLastFrame )
+					{
+						float flushDistance = Mathf.Sign( deltaMovement.x ) * ( _raycastHit.distance - skinWidth );
+						transform.Translate( new Vector2( flushDistance, 0 ) );
+					}
+					break;
+				}
 
 				// set our new deltaMovement and recalculate the rayDistance taking it into account
 				deltaMovement.x = _raycastHit.point.x - ray.x;
@@ -510,33 +517,38 @@ public class TopdownCharacterController2D : MonoBehaviour
 			_raycastHit = Physics2D.Raycast( ray, rayDirection, rayDistance, mask );
 
             if(_raycastHit){
-                // handle slopes above on left (upperleft)
-				//if( i == 0 && myHandleVerticalSlope( ref deltaMovement, Vector2.Angle( _raycastHit.normal, Vector2.right ) ) )
-				//{
-				//	_raycastHitsThisFrame.Add( _raycastHit );
-				//	// if we weren't grounded last frame, that means we're landing on a slope horizontally.
-				//	// this ensures that we stay flush to that slope
-				//	if ( !collisionState.wasGroundedLastFrame )
-				//	{
-				//		float flushDistance = Mathf.Sign( deltaMovement.x ) * ( _raycastHit.distance - skinWidth );
-				//		transform.Translate( new Vector2( flushDistance, 0 ) );
-				//	}
-				//	break;
-				//}
+                // TODO: pass origin ray here instead of in handleSlope function
+                // handle slopes on left (upper and bottom left)
+				if( i == 0 && !_horizontalSlope && myHandleVerticalSlope( ref deltaMovement, Vector2.Angle( _raycastHit.normal, (isGoingUp) ? Vector2.down : Vector2.up ) ) )
+				{
+					_raycastHitsThisFrame.Add( _raycastHit );
+					// if we weren't grounded last frame, that means we're landing on a slope horizontally.
+					// this ensures that we stay flush to that slope
+					if ( !collisionState.wasGroundedLastFrame )
+					{
+						float flushDistance = Mathf.Sign( deltaMovement.y ) * ( _raycastHit.distance - skinWidth );
+						//transform.Translate( new Vector2( flushDistance, 0 ) );
+						transform.Translate( new Vector2( 0, flushDistance ) );
+					}
+					break;
+				}
 
-    //            // handle slopes above on right (upperright)
-				//if( i == (totalVerticalRays-1) && myHandleVerticalSlope( ref deltaMovement, Vector2.Angle( _raycastHit.normal, Vector2.left ) ) )
-				//{
-				//	_raycastHitsThisFrame.Add( _raycastHit );
-				//	// if we weren't grounded last frame, that means we're landing on a slope horizontally.
-				//	// this ensures that we stay flush to that slope
-				//	if ( !collisionState.wasGroundedLastFrame )
-				//	{
-				//		float flushDistance = Mathf.Sign( deltaMovement.x ) * ( _raycastHit.distance - skinWidth );
-				//		transform.Translate( new Vector2( flushDistance, 0 ) );
-				//	}
-				//	break;
-				//}
+                // TODO: pass origin ray here instead of in handleSlope function
+                // TODO: this is still borked
+                // handle slopes on right (upper and bottom right)
+				if( i == (totalVerticalRays-1) && !_horizontalSlope && myHandleVerticalSlope( ref deltaMovement, Vector2.Angle( _raycastHit.normal, (isGoingUp) ? Vector2.down : Vector2.up ) ) )
+				{
+					_raycastHitsThisFrame.Add( _raycastHit );
+					// if we weren't grounded last frame, that means we're landing on a slope horizontally.
+					// this ensures that we stay flush to that slope
+					if ( !collisionState.wasGroundedLastFrame )
+					{
+						float flushDistance = Mathf.Sign( deltaMovement.y ) * ( _raycastHit.distance - skinWidth );
+						//transform.Translate( new Vector2( flushDistance, 0 ) );
+						transform.Translate( new Vector2( 0, flushDistance ) );
+					}
+					break;
+				}
 
                 // set our new deltaMovement and recalculate the rayDistance taking it into account
                 deltaMovement.y = _raycastHit.point.y - ray.y;
@@ -643,61 +655,6 @@ public class TopdownCharacterController2D : MonoBehaviour
 		return true;
 	}
 
-
-
-	//void moveVertically( ref Vector3 deltaMovement )
-	//{
-	//	var isGoingUp = deltaMovement.y > 0;
-	//	var rayDistance = Mathf.Abs( deltaMovement.y ) + _skinWidth;
-	//	var rayDirection = isGoingUp ? Vector2.up : -Vector2.up;
-	//	var initialRayOrigin = isGoingUp ? _raycastOrigins.topLeft : _raycastOrigins.bottomLeft;
-
-	//	// apply our horizontal deltaMovement here so that we do our raycast from the actual position we would be in if we had moved
-	//	initialRayOrigin.x += deltaMovement.x;
-
-	//	// if we are moving up, we should ignore the layers in oneWayPlatformMask
-	//	var mask = platformMask;// & ~oneWayPlatformMask;
-	//	if( ( isGoingUp && !collisionState.wasGroundedLastFrame ) || ignoreOneWayPlatformsThisFrame )
-	//		mask &= ~oneWayPlatformMask;
-
-	//	for( var i = 0; i < totalVerticalRays; i++ )
-	//	{
-	//		var ray = new Vector2( initialRayOrigin.x + i * _horizontalDistanceBetweenRays, initialRayOrigin.y );
-
-	//		DrawRay( ray, rayDirection * rayDistance, Color.red );
-	//		_raycastHit = Physics2D.Raycast( ray, rayDirection, rayDistance, mask );
-	//		if( _raycastHit )
-	//		{
-	//			// set our new deltaMovement and recalculate the rayDistance taking it into account
-	//			deltaMovement.y = _raycastHit.point.y - ray.y;
-	//			rayDistance = Mathf.Abs( deltaMovement.y );
-
-	//			// remember to remove the skinWidth from our deltaMovement
-	//			if( isGoingUp )
-	//			{
-	//				deltaMovement.y -= _skinWidth;
-	//				collisionState.above = true;
-	//			}
-	//			else
-	//			{
-	//				deltaMovement.y += _skinWidth;
-	//				collisionState.below = true;
-	//			}
-
-	//			_raycastHitsThisFrame.Add( _raycastHit );
-
-	//			// this is a hack to deal with the top of slopes. if we walk up a slope and reach the apex we can get in a situation
-	//			// where our ray gets a hit that is less then skinWidth causing us to be ungrounded the next frame due to residual velocity.
-	//			if( !isGoingUp && deltaMovement.y > 0.00001f )
-	//				_isGoingUpSlope = true;
-
-	//			// we add a small fudge factor for the float operations here. if our rayDistance is smaller
-	//			// than the width + fudge bail out because we have a direct impact
-	//			if( rayDistance < _skinWidth + kSkinWidthFloatFudgeFactor )
-	//				break;
-	//		}
-	//	}
-	//}
 
 
 	/// <summary>
